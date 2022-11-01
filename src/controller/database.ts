@@ -1,6 +1,8 @@
 import fs from 'fs';
 import {DatabaseEntry, EntityType} from './tstype';
 import sqlite3 from 'sqlite3';
+import Debug from "debug";
+const debug = Debug("zigbee-herdsman:controller:database");
 
 class SqliteDB {
     private path: string;
@@ -8,7 +10,7 @@ class SqliteDB {
 
     private constructor(path: string, db: sqlite3.Database) {
         this.path = path;
-        db = db;        
+        SqliteDB.db = db;        
     }
 
     public static open(path: string): SqliteDB {
@@ -17,7 +19,7 @@ class SqliteDB {
     }
 
     private static printErrorInfo(err: Error) {
-        console.log("Error Message:" + err.message);
+        debug("Error Message:" + err.message);
     }
 
     public createTable (sql: string) {
@@ -43,7 +45,7 @@ class SqliteDB {
         });
     };
 
-    public queryData(sql: string, callback: (rows: any) => void){
+    public queryData(sql: string, callback?: (rows: any) => void){
         SqliteDB.db.all(sql, function(err, rows){
             if(null != err){
                 SqliteDB.printErrorInfo(err);
@@ -57,8 +59,8 @@ class SqliteDB {
         });
     }
 
-    public executeSql(sql: string){
-        SqliteDB.db.run(sql, function(err: Error){
+    public executeSql(sql: string, params?: any){
+        SqliteDB.db.run(sql, params, function(err: Error){
             if(null != err){
                 SqliteDB.printErrorInfo(err);
             }
@@ -85,7 +87,7 @@ class Database {
         if (fs.existsSync(path)) {
             const db = SqliteDB.open(path);
             db.queryData("SELECT json FROM config where id == 1", (row) => {
-                const rows = (row.json as string).split('\n').map((r) => r.trim()).filter((r) => r != '');
+                const rows = (row[0].json as string).split('\n').map((r) => r.trim()).filter((r) => r != '');
                 for (const row of rows) {
                     const json = JSON.parse(row);
                     if (json.hasOwnProperty('id')) {
@@ -157,9 +159,11 @@ class Database {
             lines.push(json);
         }
 
+
+
         const db = SqliteDB.open(this.path);
-        db.executeSql("UPDATE config SET json = " + lines.join('\n') + " where id == 1");
-        db.close();         
+        db.executeSql("UPDATE config SET json = ? where id == 1", lines.join('\n'));
+        db.close();
     }
 }
 
