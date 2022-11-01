@@ -33,7 +33,7 @@ class SqliteDB {
         });
     } 
     
-    /// tilesData format; [[level, column, row, content], [level, column, row, content]]
+    // tilesData format; [[level, column, row, content], [level, column, row, content]]
     public insertData(sql: string, objects: any){
         SqliteDB.db.serialize(function(){
             var stmt = SqliteDB.db.prepare(sql);
@@ -52,7 +52,7 @@ class SqliteDB {
                 return;
             }
      
-            /// deal query data.
+            // deal query data.
             if(callback){
                 callback(rows);
             }
@@ -158,8 +158,6 @@ class Database {
             const json = JSON.stringify(DatabaseEntry);
             lines.push(json);
         }
-
-
 
         const db = SqliteDB.open(this.path);
         db.executeSql("UPDATE config SET json = ? where id == 1", lines.join('\n'));
