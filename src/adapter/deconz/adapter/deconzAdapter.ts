@@ -72,6 +72,7 @@ class DeconzAdapter extends Adapter {
         this.openRequestsQueue = [];
         this.joinPermitted = false;
         this.fwVersion = null;
+        console.log('CREATED DECONZ ADAPTER');
 
         this.frameParserEvent.on('receivedDataPayload', (data: any) => {this.checkReceivedDataPayload(data)});
         this.frameParserEvent.on('receivedGreenPowerIndication', (data: any) => {this.checkReceivedGreenPowerIndication(data)});
@@ -98,7 +99,7 @@ class DeconzAdapter extends Adapter {
     }
 
     public async stop(): Promise<void> {
-        await this.driver.close();
+        this.driver.close();
     }
 
     public async getCoordinator(): Promise<Coordinator> {
@@ -157,11 +158,10 @@ class DeconzAdapter extends Adapter {
 
             debug("PERMIT_JOIN - " + seconds + " seconds");
         } catch (error) {
-            const msg = "PERMIT_JOIN FAILED - " + error;
-            debug(msg);
+            debug("PERMIT_JOIN FAILED - " + error);
             // try again
             this.permitJoin(seconds, networkAddress);
-            //return Promise.reject(new Error(msg)); // do not reject
+            //return Promise.reject(); // do not reject
         }
     }
 
@@ -184,12 +184,8 @@ class DeconzAdapter extends Adapter {
         }
     }
 
-    public async addInstallCode(ieeeAddress: string, key: Buffer): Promise<void> {
-        return Promise.reject(new Error('Add install code is not supported'));
-    }
-
     public async reset(type: 'soft' | 'hard'): Promise<void> {
-        return Promise.reject(new Error('Reset is not supported'));
+        return Promise.reject();
     }
 
     public async lqi(networkAddress: number): Promise<LQI> {
@@ -263,9 +259,8 @@ class DeconzAdapter extends Adapter {
                     debug("LQI RESPONSE - addr: 0x" + networkAddress.toString(16) + " status: " + response.status + " read " + (response.tableListCount + response.startIndex) + "/" + response.tableEntrys + " entrys");
                     return response;
                 } catch (error) {
-                    const msg = "LQI REQUEST FAILED - addr: 0x" + networkAddress.toString(16) + " " + error;
-                    debug(msg);
-                    return Promise.reject(new Error(msg));
+                    debug("LQI REQUEST FAILED - addr: 0x" + networkAddress.toString(16) + " " + error);
+                    return Promise.reject();
                 }
             };
 
@@ -357,9 +352,8 @@ class DeconzAdapter extends Adapter {
                     debug("ROUTING_TABLE RESPONSE - addr: 0x" + networkAddress.toString(16) + " status: " + response.status + " read " + (response.tableListCount + response.startIndex) + "/" + response.tableEntrys + " entrys");
                     return response;
                 } catch (error) {
-                    const msg = "ROUTING_TABLE REQUEST FAILED - addr: 0x" + networkAddress.toString(16) + " " + error;
-                    debug(msg);
-                    return Promise.reject(new Error(msg));
+                    debug("ROUTING_TABLE REQUEST FAILED - addr: 0x" + networkAddress.toString(16) + " " + error);
+                    return Promise.reject();
                 }
             };
 
@@ -412,9 +406,8 @@ class DeconzAdapter extends Adapter {
             debug("RECEIVING NODE_DESCRIPTOR - addr: 0x" + networkAddress.toString(16) + " type: " + type + " manufacturer: 0x" + manufacturer.toString(16));
             return {manufacturerCode: manufacturer, type};
         } catch (error) {
-            const msg = "RECEIVING NODE_DESCRIPTOR FAILED - addr: 0x" + networkAddress.toString(16) + " " + error;
-            debug(msg);
-            return Promise.reject(new Error(msg));
+            debug("RECEIVING NODE_DESCRIPTOR FAILED - addr: 0x" + networkAddress.toString(16) + " " + error);
+            return Promise.reject();
         }
     }
 
@@ -455,9 +448,8 @@ class DeconzAdapter extends Adapter {
             debug("ACTIVE_ENDPOINTS - addr: 0x" + networkAddress.toString(16) + " EP list: " + epList);
             return {endpoints: epList};
         } catch (error) {
-            const msg = "READING ACTIVE_ENDPOINTS FAILED - addr: 0x" + networkAddress.toString(16) + " " + error;
-            debug(msg);
-            return Promise.reject(new Error(msg));
+            debug("READING ACTIVE_ENDPOINTS FAILED - addr: 0x" + networkAddress.toString(16) + " " + error);
+            return Promise.reject();
         }
     }
 
@@ -515,9 +507,8 @@ class DeconzAdapter extends Adapter {
             debug("RECEIVING SIMPLE_DESCRIPTOR - addr: 0x" + networkAddress.toString(16) + " EP:" + simpleDesc.endpointID + " inClusters: " + inClusters + " outClusters: " + outClusters);
             return simpleDesc;
         } catch (error) {
-            const msg = "RECEIVING SIMPLE_DESCRIPTOR FAILED - addr: 0x" + networkAddress.toString(16) + " " + error;
-            debug(msg);
-            return Promise.reject(new Error(msg));
+            debug("RECEIVING SIMPLE_DESCRIPTOR FAILED - addr: 0x" + networkAddress.toString(16) + " " + error);
+            return Promise.reject();
         }
     }
 
@@ -623,7 +614,7 @@ class DeconzAdapter extends Adapter {
             .catch(error => {
                 debug(`sendZclFrameToEndpoint ERROR`);
                 debug(error);
-                //return Promise.reject(new Error("sendZclFrameToEndpoint ERROR " + error));
+                //return Promise.reject();
             });
         try {
                 let data = null;
@@ -685,6 +676,7 @@ class DeconzAdapter extends Adapter {
             return this.driver.enqueueSendDataRequest(request) as Promise<void>;
         } catch (error) {
             //debug(`sendZclFrameToGroup ERROR: ${error}`);
+            //return Promise.reject();
             throw new Error(error);
         }
     }
@@ -714,6 +706,7 @@ class DeconzAdapter extends Adapter {
             return this.driver.enqueueSendDataRequest(request) as Promise<void>;
         } catch (error) {
             //debug(`sendZclFrameToAll ERROR: ${error}`);
+            //return Promise.reject();
             throw new Error(error);
         }
     }
@@ -999,9 +992,8 @@ class DeconzAdapter extends Adapter {
                 channel: channel
             };
         } catch (error) {
-            const msg = "get network parameters Error:" + error;
-            debug(msg);
-            return Promise.reject(new Error(msg));
+            debug("get network parameters Error:" + error);
+            return Promise.reject();
         }
     }
 
@@ -1056,9 +1048,7 @@ class DeconzAdapter extends Adapter {
     private checkReceivedGreenPowerIndication(ind: gpDataInd) {
         ind.clusterId = 0x21;
 
-        let gpFrame = [ind.rspId, ind.seqNr, ind.id, 
-            0, 0, // 0, 0 for options is a temp fix until https://github.com/Koenkk/zigbee-herdsman/pull/536 is merged.
-            // ind.options & 0xff, (ind.options >> 8) & 0xff,
+        let gpFrame = [ind.rspId, ind.seqNr, ind.id, ind.options & 0xff, (ind.options >> 8) & 0xff,
         ind.srcId & 0xff, (ind.srcId >> 8) & 0xff, (ind.srcId >> 16) & 0xff, (ind.srcId >> 24) & 0xff,
         ind.frameCounter & 0xff, (ind.frameCounter >> 8) & 0xff, (ind.frameCounter >> 16) & 0xff, (ind.frameCounter >> 24) & 0xff,
         ind.commandId, ind.commandFrameSize].concat(ind.commandFrame);

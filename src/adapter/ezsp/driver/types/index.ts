@@ -111,8 +111,6 @@ import {
     EmberSimpleDescriptor,
     EmberMultiAddress,
     EmberNeighbors,
-    EmberRoutingTable,
-    EmberRoutingTableEntry,
 } from './struct';
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any*/
@@ -241,6 +239,4 @@ export {
     EmberSimpleDescriptor,
     EmberMultiAddress,
     EmberNeighbors,
-    EmberRoutingTable,
-    EmberRoutingTableEntry,
 };

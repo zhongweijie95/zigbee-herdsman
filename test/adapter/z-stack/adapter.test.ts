@@ -835,7 +835,6 @@ const baseZnpRequestMock = new ZnpRequestMockBuilder()
     .handle(Subsystem.UTIL, "assocGetWithAddress", () => ({payload: {noderelation: assocGetWithAddressNodeRelation}}))
     .handle(Subsystem.UTIL, "assocAdd", () => ({payload: {}}))
     .handle(Subsystem.UTIL, "ledControl", () => ({}))
-    .handle(Subsystem.APP_CNF, "bdbAddInstallCode", () => ({}))
     .handle(Subsystem.AF, "register", () => ({}))
     .handle(Subsystem.AF, "dataRequest", () => {
         if (dataRequestCode !== 0) {
@@ -1722,30 +1721,6 @@ describe("zstack-adapter", () => {
         mockZnpRequestWith(commissioned12UnalignedMismatchRequestMock);
         const result = await adapter.start();
         expect(result).toBe("reset");
-    });
-
-    it("Add install code: Install Code + CRC", async () => {
-        basicMocks();
-        await adapter.start();
-        await adapter.addInstallCode('0x9035EAFFFE424783', Buffer.from([0xAE, 0x3B, 0x28, 0x72, 0x81, 0xCF, 0x16, 0xF5, 0x50, 0x73, 0x3A, 0x0C, 0xEC, 0x38, 0xAA, 0x31, 0xE8, 0x02]))
-        const payload = {
-            installCodeFormat: 1,
-            ieeeaddr: '0x9035EAFFFE424783',
-            installCode: Buffer.from([0xAE, 0x3B, 0x28, 0x72, 0x81, 0xCF, 0x16, 0xF5, 0x50, 0x73, 0x3A, 0x0C, 0xEC, 0x38, 0xAA, 0x31, 0xE8, 0x02]),
-        }
-        expect(mockZnpRequest).toHaveBeenCalledWith(Subsystem.APP_CNF, 'bdbAddInstallCode', payload);
-    });
-
-    it("Add install code: Key derived from Install Code", async () => {
-        basicMocks();
-        await adapter.start();
-        await adapter.addInstallCode('0x9035EAFFFE424783', Buffer.from([0xAE, 0x3B, 0x28, 0x72, 0x81, 0xCF, 0x16, 0xF5, 0x50, 0x73, 0x3A, 0x0C, 0xEC, 0x38, 0xAA, 0x31]))
-        const payload = {
-            installCodeFormat: 2,
-            ieeeaddr: '0x9035EAFFFE424783',
-            installCode: Buffer.from([0xAE, 0x3B, 0x28, 0x72, 0x81, 0xCF, 0x16, 0xF5, 0x50, 0x73, 0x3A, 0x0C, 0xEC, 0x38, 0xAA, 0x31]),
-        }
-        expect(mockZnpRequest).toHaveBeenCalledWith(Subsystem.APP_CNF, 'bdbAddInstallCode', payload);
     });
 
     it("LED behaviour: disable LED true, firmware not handling leds", async () => {

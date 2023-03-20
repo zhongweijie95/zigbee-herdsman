@@ -30,8 +30,4 @@ export interface Backup {
         version?: ZnpVersion;
         trustCenterLinkKeySeed?: Buffer;
     };
-    ezsp?: {
-        version?: number;
-        hashed_tclk?: Buffer;
-    };
 }

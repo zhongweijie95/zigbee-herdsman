@@ -54,7 +54,6 @@ class Device extends Entity {
     private _skipTimeResponse: boolean;
     private _deleted: boolean;
     private _defaultSendRequestWhen?: SendRequestWhen;
-    private _lastDefaultResponseSequenceNumber: number;
 
     // Getters/setters
     get ieeeAddr(): string {return this._ieeeAddr;}
@@ -284,12 +283,9 @@ class Device extends Entity {
         const isDefaultResponse = frame.isGlobal() && frame.getCommand().name === 'defaultRsp';
         const commandHasResponse = frame.getCommand().hasOwnProperty('response');
         const disableDefaultResponse = frame.Header.frameControl.disableDefaultResponse;
-        // Sometimes messages are received twice, prevent responding twice
-        const alreadyResponded = this._lastDefaultResponseSequenceNumber === frame.Header.transactionSequenceNumber;
-        if (this.type !== 'GreenPower' && !dataPayload.wasBroadcast && !disableDefaultResponse && !isDefaultResponse && 
-            !commandHasResponse && !this._skipDefaultResponse && !alreadyResponded) {
+        if (!dataPayload.wasBroadcast && !disableDefaultResponse && !isDefaultResponse && !commandHasResponse &&
+            !this._skipDefaultResponse) {
             try {
-                this._lastDefaultResponseSequenceNumber = frame.Header.transactionSequenceNumber;
                 await endpoint.defaultResponse(
                     frame.getCommand().ID, 0, frame.Cluster.ID, frame.Header.transactionSequenceNumber,
                 );
@@ -388,10 +384,9 @@ class Device extends Entity {
         return Object.values(Device.devices).filter(d => !d._deleted);
     }
 
-    public undelete(interviewCompleted=false): void {
+    public undelete(): void {
         assert(this._deleted, `Device '${this.ieeeAddr}' is not deleted`);
         this._deleted = false;
-        this._interviewCompleted=interviewCompleted;
         Entity.database.insert(this.toDatabaseEntry());
     }
 
@@ -498,9 +493,9 @@ class Device extends Entity {
             'TERNCY-PP01': {
                 type: 'EndDevice', manufacturerID: 4648, manufacturerName: 'TERNCY', powerSource: 'Battery'
             },
-            '3RWS18BZ': {}, // https://github.com/Koenkk/zigbee-herdsman-converters/pull/2710
+            // https://github.com/Koenkk/zigbee-herdsman-converters/pull/2710
+            '3RWS18BZ': {},
             'MULTI-MECI--EA01': {},
-            'MOT003': {}, // https://github.com/Koenkk/zigbee2mqtt/issues/12471
         };
 
         const match = Object.keys(lookup).find((key) => this.modelID && this.modelID.match(key));
@@ -636,8 +631,6 @@ class Device extends Entity {
                                         `retrying after 10 seconds...`);
                                     await Wait(10000);
                                     result = await endpoint.read('genBasic', [key], {sendWhen: 'immediate'});
-                                } else {
-                                    throw error;
                                 }
                             }
 
@@ -707,20 +700,15 @@ class Device extends Entity {
         }
 
         // Bind poll control
-        try {
-            for (const endpoint of this.endpoints.filter((e): boolean => e.supportsInputCluster('genPollCtrl'))) {
-                debug.log(`Interview - Poll control - binding '${this.ieeeAddr}' endpoint '${endpoint.ID}'`);
-                await endpoint.bind('genPollCtrl', coordinator.endpoints[0]);
-                const pollPeriod = await endpoint.read('genPollCtrl', ['checkinInterval']);
-                if (pollPeriod.checkinInterval <= 2400) {// 10 minutes
-                    this.defaultSendRequestWhen = 'fastpoll';
-                } else {
-                    this.defaultSendRequestWhen = 'active';
-                }
+        for (const endpoint of this.endpoints.filter((e): boolean => e.supportsInputCluster('genPollCtrl'))) {
+            debug.log(`Interview - Poll control - binding '${this.ieeeAddr}' endpoint '${endpoint.ID}'`);
+            await endpoint.bind('genPollCtrl', coordinator.endpoints[0]);
+            const pollPeriod = await endpoint.read('genPollCtrl', ['checkinInterval']);
+            if (pollPeriod.checkinInterval <= 2400) {// 10 minutes
+                this.defaultSendRequestWhen = 'fastpoll';
+            } else {
+                this.defaultSendRequestWhen = 'active';
             }
-        } catch (error) {
-            /* istanbul ignore next */
-            debug.log(`Interview - failed to bind genPollCtrl (${error})`);
         }
     }
 

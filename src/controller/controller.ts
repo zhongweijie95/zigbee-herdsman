@@ -11,7 +11,6 @@ import {Utils as ZclUtils, FrameControl} from '../zcl';
 import Touchlink from './touchlink';
 import GreenPower from './greenPower';
 import {BackupUtils} from "../utils";
-import assert from 'assert';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -32,14 +31,6 @@ interface Options {
      * try to remove the device from the network.
      */
     acceptJoiningDeviceHandler: (ieeeAddr: string) => Promise<boolean>;
-}
-
-async function catcho(func: () => Promise<void>, errorMessage: string): Promise<void> {
-    try {
-        await func();
-    } catch (error) {
-        debug.error(`${errorMessage}: ${error}`);
-    }
 }
 
 const DefaultOptions: Options = {
@@ -211,25 +202,6 @@ class Controller extends events.EventEmitter {
         return this.touchlink.factoryResetFirst();
     }
 
-    public async addInstallCode(installCode: string): Promise<void> {
-        const aqaraMatch = installCode.match(/^G\$M:.+\$A:(.+)\$I:(.+)$/);
-        let ieeeAddr, key;
-        if (aqaraMatch) {
-            ieeeAddr = aqaraMatch[1];
-            key = aqaraMatch[2];
-        } else {
-            assert(installCode.length === 95 || installCode.length === 91, 
-                `Unsupported install code, got ${installCode.length} chars, expected 95 or 91`);
-            const keyStart = installCode.length - (installCode.length === 95 ? 36 : 32);
-            ieeeAddr = installCode.substring(keyStart - 19, keyStart - 3);
-            key = installCode.substring(keyStart, installCode.length);
-        }
-
-        ieeeAddr = `0x${ieeeAddr}`;
-        key = Buffer.from(key.match(/.{1,2}/g).map(d => parseInt(d, 16)));
-        await this.adapter.addInstallCode(ieeeAddr, key);
-    }
-
     public async permitJoin(permit: boolean, device?: Device, time?: number): Promise<void> {
         await this.permitJoinInternal(permit, 'manual', device, time);
     }
@@ -301,7 +273,9 @@ class Controller extends events.EventEmitter {
         this.adapter.removeAllListeners(AdapterEvents.Events.deviceAnnounce);
         this.adapter.removeAllListeners(AdapterEvents.Events.deviceLeave);
 
-        await catcho(() => this.permitJoinInternal(false, 'manual'), "Failed to disable join on stop");
+        try {
+            await this.permitJoinInternal(false, 'manual');
+        } catch (e) {}
 
         clearInterval(this.backupTimer);
         clearInterval(this.databaseSaveTimer);
@@ -321,8 +295,7 @@ class Controller extends events.EventEmitter {
         this.database.write();
     }
 
-    public async backup(): Promise<void> {
-        this.databaseSave();
+    private async backup(): Promise<void> {
         if (this.options.backupPath && await this.adapter.supportsBackup()) {
             debug.log('Creating coordinator backup');
             const backup = await this.adapter.backup();
@@ -469,7 +442,10 @@ class Controller extends events.EventEmitter {
     private async onAdapterDisconnected(): Promise<void> {
         debug.log(`Adapter disconnected'`);
 
-        await catcho(() => this.adapter.stop(), 'Failed to stop adapter on disconnect');
+        try {
+            await this.adapter.stop();
+        } catch (error) {
+        }
 
         this.emit(Events.Events.adapterDisconnected);
     }
@@ -484,7 +460,7 @@ class Controller extends events.EventEmitter {
         // Green power devices dont' have a modelID, create a modelID based on the deviceID (=type)
         const modelID = `GreenPower_${payload.deviceID}`;
 
-        let device = Device.byIeeeAddr(ieeeAddr, true);
+        let device = Device.byIeeeAddr(ieeeAddr);
         if (!device) {
             debug.log(`New green power device '${ieeeAddr}' joined`);
             debug.log(`Creating device '${ieeeAddr}'`);
@@ -494,16 +470,8 @@ class Controller extends events.EventEmitter {
             );
             device.save();
 
-            this.selfAndDeviceEmit(device, Events.Events.deviceJoined, {device} as Events.DeviceJoinedPayload);
-
-            const deviceInterviewPayload: Events.DeviceInterviewPayload = {status: 'successful', device};
-            this.selfAndDeviceEmit(device, Events.Events.deviceInterview, deviceInterviewPayload);
-        } else if (device.isDeleted) {
-            debug.log(`Deleted green power device '${ieeeAddr}' joined`);
-
-            device.undelete(true);
-
-            this.selfAndDeviceEmit(device, Events.Events.deviceJoined, {device} as Events.DeviceJoinedPayload);
+            const deviceJoinedPayload: Events.DeviceJoinedPayload = {device};
+            this.selfAndDeviceEmit(device, Events.Events.deviceJoined, deviceJoinedPayload);
 
             const deviceInterviewPayload: Events.DeviceInterviewPayload = {status: 'successful', device};
             this.selfAndDeviceEmit(device, Events.Events.deviceInterview, deviceInterviewPayload);
@@ -521,8 +489,7 @@ class Controller extends events.EventEmitter {
         if (this.options.acceptJoiningDeviceHandler) {
             if (!(await this.options.acceptJoiningDeviceHandler(payload.ieeeAddr))) {
                 debug.log(`Device '${payload.ieeeAddr}' rejected by handler, removing it`);
-                await catcho(() => this.adapter.removeDevice(payload.networkAddress, payload.ieeeAddr), 
-                    'Failed to remove rejected device');
+                await this.adapter.removeDevice(payload.networkAddress, payload.ieeeAddr);
                 return;
             } else {
                 debug.log(`Device '${payload.ieeeAddr}' accepted by handler`);
@@ -603,7 +570,7 @@ class Controller extends events.EventEmitter {
                 // This is handled by touchlink
                 return;
             } else if (dataPayload.frame.Cluster.name === 'greenPower') {
-                await this.greenPower.onZclGreenPowerData(dataPayload);
+                this.greenPower.onZclGreenPowerData(dataPayload);
                 // lookup encapsulated gpDevice for further processing
                 gpDevice = Device.byNetworkAddress(dataPayload.frame.Payload.srcID & 0xFFFF);
             }

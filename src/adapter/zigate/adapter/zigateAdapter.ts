@@ -149,7 +149,7 @@ class ZiGateAdapter extends Adapter {
             })
             .catch((e) => {
                 debug.error(e);
-                return Promise.reject(new Error("" + e))
+                return Promise.reject()
             });
     };
 
@@ -164,10 +164,6 @@ class ZiGateAdapter extends Adapter {
         // Suitable only for the coordinator, not the entire network or point-to-point for routers
         this.joinPermitted = result.payload.status === 0;
     };
-
-    public async addInstallCode(ieeeAddress: string, key: Buffer): Promise<void> {
-        return Promise.reject(new Error('Add install code is not supported'));
-    }
 
     public async reset(type: 'soft' | 'hard'): Promise<void> {
         debug.log('reset %s', type);
@@ -190,7 +186,7 @@ class ZiGateAdapter extends Adapter {
                     channel: <number>NetworkStateResponse.payload.Channel
                 }
                 return Promise.resolve(resultPayload)
-            }).catch(() => Promise.reject(new Error("Get network parameters failed")));
+            }).catch(() => Promise.reject());
     };
 
     /**
@@ -208,7 +204,7 @@ class ZiGateAdapter extends Adapter {
     public async setTransmitPower(value: number): Promise<void> {
         debug.log('setTransmitPower, %o', arguments);
         return this.driver.sendCommand(ZiGateCommandCode.SetTXpower, {value: value})
-            .then(() => Promise.resolve()).catch(() => Promise.reject(new Error("Set transmitpower failed")));
+            .then(() => Promise.resolve()).catch(() => Promise.reject());
     };
 
     public async lqi(networkAddress: number): Promise<TsType.LQI> {
@@ -269,9 +265,8 @@ class ZiGateAdapter extends Adapter {
                         + "/" + response.tableEntrys + " entrys");
                     return response;
                 } catch (error) {
-                    const msg = "LQI REQUEST FAILED - addr: 0x" + networkAddress.toString(16) + " " + error;
-                    debug.log(msg);
-                    return Promise.reject(new Error(msg));
+                    debug.log("LQI REQUEST FAILED - addr: 0x" + networkAddress.toString(16) + " " + error);
+                    return Promise.reject();
                 }
             };
 
@@ -329,9 +324,9 @@ class ZiGateAdapter extends Adapter {
 
                 return {manufacturerCode: manufacturer, type};
             } catch (error) {
-                const msg = "RECEIVING NODE_DESCRIPTOR FAILED - addr: 0x" + networkAddress.toString(16) + " " + error;
-                debug.error(msg);
-                return Promise.reject(new Error(msg));
+                debug.error("RECEIVING NODE_DESCRIPTOR FAILED - addr: 0x"
+                    + networkAddress.toString(16) + " " + error);
+                return Promise.reject();
             }
         }, networkAddress);
     };
@@ -360,7 +355,7 @@ class ZiGateAdapter extends Adapter {
 
             } catch (error) {
                 debug.error("RECEIVING ActiveEndpoints FAILED, %o", error);
-                return Promise.reject(new Error("RECEIVING ActiveEndpoints FAILED " + error));
+                return Promise.reject();
             }
         }, networkAddress);
     };
@@ -406,10 +401,9 @@ class ZiGateAdapter extends Adapter {
                     return resultPayload;
                 }
             } catch (error) {
-                const msg = "RECEIVING SIMPLE_DESCRIPTOR FAILED - addr: 0x" + networkAddress.toString(16)
-                    + " EP:" + endpointID + " " + error;
-                debug.error(msg);
-                return Promise.reject(new Error(msg));
+                debug.error("RECEIVING SIMPLE_DESCRIPTOR FAILED - addr: 0x" + networkAddress.toString(16)
+                    + " EP:" + endpointID + " " + error);
+                return Promise.reject();
             }
 
         }, networkAddress);
@@ -443,9 +437,8 @@ class ZiGateAdapter extends Adapter {
                 debug.log('Bind %s success', sourceIeeeAddress);
                 return Promise.resolve();
             } else {
-                const msg = `Bind ${sourceIeeeAddress} failed`;
-                debug.error(msg);
-                return Promise.reject(new Error(msg));
+                debug.error('Bind %s failed', sourceIeeeAddress);
+                return Promise.reject();
             }
         }, destinationNetworkAddress);
     };
@@ -479,9 +472,8 @@ class ZiGateAdapter extends Adapter {
                 debug.log('Unbind %s success', sourceIeeeAddress);
                 return Promise.resolve();
             } else {
-                const msg = `Unbind ${sourceIeeeAddress} failed`;
-                debug.error(msg);
-                return Promise.reject(new Error(msg));
+                debug.error('Unbind %s failed', sourceIeeeAddress);
+                return Promise.reject();
             }
         }, destinationNetworkAddress);
     };
@@ -498,7 +490,7 @@ class ZiGateAdapter extends Adapter {
             return this.driver.sendCommand(ZiGateCommandCode.ManagementLeaveRequest, payload)
                 .then((Response) => {
                     return Promise.resolve()
-                }).catch(() => Promise.reject(new Error("ManagementLeaveRequest failed")));
+                }).catch(() => Promise.reject());
         }, networkAddress);
     };
 
@@ -709,24 +701,24 @@ class ZiGateAdapter extends Adapter {
      */
     public async setChannelInterPAN(channel: number): Promise<void> {
         debug.log('setChannelInterPAN', arguments)
-        return Promise.reject("Not supported");
+        return Promise.reject();
     };
 
     public async sendZclFrameInterPANToIeeeAddr(zclFrame: ZclFrame, ieeeAddress: string): Promise<void> {
         debug.log('sendZclFrameInterPANToIeeeAddr', arguments)
-        return Promise.reject("Not supported");
+        return Promise.reject();
     };
 
     public async sendZclFrameInterPANBroadcast(
         zclFrame: ZclFrame, timeout: number
     ): Promise<Events.ZclDataPayload> {
         debug.log('sendZclFrameInterPANBroadcast', arguments)
-        return Promise.reject("Not supported");
+        return Promise.reject();
     };
 
     public restoreChannelInterPAN(): Promise<void> {
         debug.log('restoreChannelInterPAN', arguments)
-        return Promise.reject("Not supported");
+        return Promise.reject();
     };
 
 

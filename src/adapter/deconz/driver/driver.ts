@@ -103,28 +103,7 @@ class Driver extends events.EventEmitter {
              }, (1000 * 60 * 8)); // 8 minutes
 
         this.onParsed = this.onParsed.bind(this);
-        this.frameParserEvent.on('receivedDataNotification', (data: number) => {this.catchPromise(this.checkDeviceStatus(data))});
-
-        this.on('close', () => {
-            this.intervals.forEach(i => clearInterval(i));
-            queue.length = 0;
-            busyQueue.length = 0;
-            apsQueue.length = 0;
-            apsBusyQueue.length = 0;
-            apsConfirmIndQueue.length = 0;
-            timeoutCounter = 0;
-        })
-    }
-
-    protected intervals: NodeJS.Timer[] = [];
-
-    protected registerInterval(interval: NodeJS.Timer) {
-        this.intervals.push(interval);
-    }
-    
-    protected catchPromise(val: any) {
-        return Promise.resolve(val)
-            .catch(err => debug(`Promise was caught with reason: ${err}`));
+        this.frameParserEvent.on('receivedDataNotification', (data: number) => {this.checkDeviceStatus(data)});
     }
 
     public setDelay(delay: number): void {
@@ -155,12 +134,15 @@ class Driver extends events.EventEmitter {
         }
 
         const that = this
-        this.registerInterval(setInterval(() => { that.processQueue(); }, this.PROCESS_QUEUES));  // fire non aps requests
-        this.registerInterval(setInterval(() => { this.catchPromise(that.processBusyQueue()); }, this.PROCESS_QUEUES)); // check timeouts for non aps requests
-        this.registerInterval(setInterval(() => { this.catchPromise(that.processApsQueue()); }, this.PROCESS_QUEUES));  // fire aps request
-        this.registerInterval(setInterval(() => { that.processApsBusyQueue(); }, this.PROCESS_QUEUES));  // check timeouts for all open aps requests
-        this.registerInterval(setInterval(() => { this.catchPromise(that.processApsConfirmIndQueue()); }, this.PROCESS_QUEUES));  // fire aps indications and confirms
-        this.registerInterval(setInterval(() => { this.catchPromise(that.handleDeviceStatus()); }, this.HANDLE_DEVICE_STATUS_DELAY)); // query confirm and indication requests
+        setInterval(() => { that.processQueue(); }, this.PROCESS_QUEUES);  // fire non aps requests
+        setInterval(() => { that.processBusyQueue(); }, this.PROCESS_QUEUES); // check timeouts for non aps requests
+        setInterval(() => { that.processApsQueue(); }, this.PROCESS_QUEUES);  // fire aps request
+        setInterval(() => { that.processApsBusyQueue(); }, this.PROCESS_QUEUES);  // check timeouts for all open aps requests
+        setInterval(() => { that.processApsConfirmIndQueue(); }, this.PROCESS_QUEUES);  // fire aps indications and confirms
+
+        setInterval(() => { that.handleDeviceStatus()
+                            .then(result => {})
+                            .catch(error => {}); }, this.HANDLE_DEVICE_STATUS_DELAY); // query confirm and indication requests
     }
 
     public static async isValidPath(path: string): Promise<boolean> {

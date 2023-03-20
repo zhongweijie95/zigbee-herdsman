@@ -16,7 +16,6 @@ import debounce from 'debounce';
 import {LoggerStub} from "../../../controller/logger-stub";
 import {ZnpAdapterManager} from "./manager";
 import * as Models from "../../../models";
-import assert from 'assert';
 
 const debug = Debug("zigbee-herdsman:adapter:zStack:adapter");
 const Subsystem = UnpiConstants.Subsystem;
@@ -643,12 +642,6 @@ class ZStackAdapter extends Adapter {
         }, networkAddress);
     }
 
-    public async addInstallCode(ieeeAddress: string, key: Buffer): Promise<void> {
-        assert(this.version.product !== ZnpVersion.zStack12, 'Install code is not supported for ZStack 1.2 adapter');
-        const payload = {installCodeFormat: key.length === 18 ? 1 : 2, ieeeaddr: ieeeAddress, installCode: key};
-        await this.znp.request(Subsystem.APP_CNF, 'bdbAddInstallCode', payload);
-    }
-
     public async bind(
         destinationNetworkAddress: number, sourceIeeeAddress: string, sourceEndpoint: number,
         clusterID: number, destinationAddressOrGroup: string | number, type: 'endpoint' | 'group',
@@ -755,8 +748,7 @@ class ZStackAdapter extends Adapter {
                         // to rediscover the route every time.
                         const debouncer = debounce(() => {
                             this.queue.execute<void>(async () => {
-                                /* istanbul ignore next */
-                                this.discoverRoute(payload.networkAddress, false).catch(() => {});
+                                await this.discoverRoute(payload.networkAddress, false);
                             }, payload.networkAddress);
                         }, 60 * 1000, true);
                         this.deviceAnnounceRouteDiscoveryDebouncers.set(payload.networkAddress, debouncer);

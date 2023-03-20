@@ -1,5 +1,5 @@
 /* istanbul ignore file */
 import {Ezsp} from './ezsp';
-import {Driver, EmberIncomingMessage} from './driver';
+import {Driver} from './driver';
 
-export {Ezsp, Driver, EmberIncomingMessage};
+export {Ezsp, Driver};

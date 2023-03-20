@@ -94,8 +94,6 @@ const CommandsLookup: {[s: string]: MessagePayloadType} = {
     'checkin': 'commandCheckIn',
     'moveToHue': 'commandMoveToHue',
     'store': 'commandStore',
-    'alarm': 'commandAlarm',                                                  
-    'unlockDoorRsp': 'commandUnlockDoorRsp',
 
     // HEIMAN scenes cluster
     'atHome': 'commandAtHome',
@@ -110,8 +108,7 @@ const CommandsLookup: {[s: string]: MessagePayloadType} = {
     'getIdAndKeyCodeListRsp': 'commandGetIdAndKeyCodeListRsp',
 
     'mcuSyncTime': 'commandMcuSyncTime', // Tuya time sync
-    'activeStatusReport': 'commandActiveStatusReport', // Tuya active status report (command 0x06)
-    'activeStatusReportAlt': 'commandActiveStatusReportAlt', // Tuya active status report (command 0x05)
+    'activeStatusReport': 'commandActiveStatusReport', // Tuya active status report
 
     // Wiser Smart HVAC Commmands
     'wiserSmartSetSetpoint': 'commandWiserSmartSetSetpoint',
@@ -119,17 +116,6 @@ const CommandsLookup: {[s: string]: MessagePayloadType} = {
 
     // Dafoss Ally/Hive TRV Commands
     'danfossSetpointCommand': 'commandDanfossSetpointCommand',
-
-    // Siglis zigfred Commands
-    'siglisZigfredButtonEvent': 'commandSiglisZigfredButtonEvent',
-
-    // Zosung IR remote cluster commands and responses
-    'zosungSendIRCode01': 'commandZosungSendIRCode01',
-    'zosungSendIRCode02': 'commandZosungSendIRCode02',
-    'zosungSendIRCode04': 'commandZosungSendIRCode04',
-    'zosungSendIRCode00': 'commandZosungSendIRCode00',
-    'zosungSendIRCode03Resp': 'zosungSendIRCode03Resp',
-    'zosungSendIRCode05Resp': 'zosungSendIRCode05Resp',
 };
 
 type MessagePayloadType =
@@ -146,16 +132,12 @@ type MessagePayloadType =
     'commandOperationEventNotification' | 'commandStatusChangeNotification' | 'commandEnhancedMoveToHueAndSaturation' |
     'commandUpOpen' | 'commandDownClose' | 'commandMoveToLevel' | 'commandMoveColorTemp' | 'commandDataResponse' |
     'commandDataReport' | 'commandGetWeeklyScheduleRsp' | 'commandQueryNextImageRequest' | 'commandNotification' |
-    'commandAlertsNotification' | 'commandProgrammingEventNotification' | 'commandGetPinCodeRsp' |
-    'commandArrivalSensorNotify' | 'commandCommisioningNotification' | 'commandGetUserStatusRsp' |
-    'commandAlarm' | 'commandUnlockDoorRsp' |
+    'commandAlertsNotification' | 'commandProgrammingEventNotification' | "commandGetPinCodeRsp" |
+    "commandArrivalSensorNotify" | 'commandCommisioningNotification' | 'commandGetUserStatusRsp' |
     'commandAtHome' | 'commandGoOut' | 'commandCinema' | 'commandRepast' | 'commandSleep' |
     'commandStudyKeyRsp' | 'commandCreateIdRsp' | 'commandGetIdAndKeyCodeListRsp' | 'commandMcuSyncTime' |
-    'commandGetPanelStatus' | 'commandCheckIn' | 'commandActiveStatusReport' | 'commandActiveStatusReportAlt' |
-    'commandMoveToHue' | 'commandStore'| 'commandWiserSmartSetSetpoint' | 'commandWiserSmartCalibrateValve' |
-    'commandSiglisZigfredButtonEvent' | 'commandDanfossSetpointCommand' | 'commandZosungSendIRCode00' |
-    'commandZosungSendIRCode01' | 'commandZosungSendIRCode02'|'commandZosungSendIRCode04' | 'zosungSendIRCode03Resp' | 
-    'zosungSendIRCode05Resp';
+    'commandGetPanelStatus' | 'commandCheckIn' | 'commandActiveStatusReport' | 'commandMoveToHue' | 'commandStore'|
+    'commandWiserSmartSetSetpoint' | 'commandWiserSmartCalibrateValve' | 'commandDanfossSetpointCommand';
 
 interface MessagePayload {
     type: MessagePayloadType;
